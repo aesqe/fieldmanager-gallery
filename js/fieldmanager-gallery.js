@@ -21,7 +21,7 @@ var sortableCollection = function() {
 				var val = [];
 
 				$wrapper.children('.gallery-item').each( function() {
-					val.push( $(this).data('id') );
+					val.push( $(this).data('fieldmanager-item-id') );
 				} );
 
 				$input.val( val.join(',') );
@@ -42,8 +42,14 @@ var sortableCollection = function() {
 $( document ).ready( sortableCollection );
 $( document ).on( 'fieldmanager_gallery_preview', sortableCollection );
 
-$( document ).on( 'click', '.fm-gallery-remove', function(e) {
+$( document ).on( 'click', '.fm-gallery-remove, .fm-gallery-empty', function(e) {
 	e.preventDefault();
+
+	// Disable empty button
+	if ( $(this).hasClass('fm-gallery-empty') ) {;
+		$(this).addClass('button-disabled');
+	}
+
 	var parent = $(this).parents( '.fm-item.fm-gallery' );
 	parent.find( '.fm-gallery-id' ).val('');
 	parent.find( '.gallery-wrapper' ).html( '' );
@@ -162,6 +168,10 @@ $( document ).on( 'click', '.fm-gallery-button', function( event ) {
 		if ( ! $el.data('collection') ) {
 			attachments = fm_gallery_frame[ $el.attr('id') ].state().get('selection');
 		}
+		// Update empty gallery button state
+		else {
+			$el.siblings('.fm-gallery-empty').removeClass('button-disabled');
+		}
 
 		var ids = [],
 		    galleryItems = [];
@@ -180,7 +190,7 @@ $( document ).on( 'click', '.fm-gallery-button', function( event ) {
 
 			var galleryItem = $( '<div />', {
 				'class': 'gallery-item',
-				'data-id': attachment.id,
+				'data-fieldmanager-item-id': attachment.id,
 			} );
 
 			galleryItems.push( galleryItem );
@@ -221,6 +231,13 @@ $( document ).on( 'click', '.fm-gallery-button', function( event ) {
 	// When an image is selected, run a callback.
 	fm_gallery_frame[ $el.attr('id') ].on( 'select', mediaFrameHandleSelect );
 	fm_gallery_frame[ $el.attr('id') ].on( 'update', mediaFrameHandleSelect );
+
+	// When closing modal, deletes frame by assuring always sync with the preview (data collection only)
+	fm_gallery_frame[ $el.attr('id') ].on( 'close', function(e) {
+		if ( $el.data('collection') ) {
+			delete fm_gallery_frame[ $el.attr('id') ];
+		}
+	} );
 
 	fm_gallery_frame[ $el.attr('id') ].open();
 

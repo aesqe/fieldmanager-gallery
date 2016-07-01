@@ -20,6 +20,12 @@ class Fieldmanager_Gallery extends Fieldmanager_Field {
 
 	/**
 	 * @var string
+	 * Empty gallery button Label
+	 */
+	public $empty_gallery_label;
+
+	/**
+	 * @var string
 	 * Button label in the gallery modal popup
 	 */
 	public $modal_button_label;
@@ -103,6 +109,16 @@ class Fieldmanager_Gallery extends Fieldmanager_Field {
 				self::$has_registered_gallery = True;
 			} );
 		}
+
+		/**
+		 * Whitelist the data attribute used
+		 * to expose gallery item IDs to the JS.
+		 */
+		add_filter( 'wp_kses_allowed_html', function( $allowed_html ) {
+			$allowed_html['div']['data-fieldmanager-item-id'] = true;
+			return $allowed_html;
+		} );
+
 		parent::__construct( $label, $options );
 	}
 
@@ -146,7 +162,7 @@ class Fieldmanager_Gallery extends Fieldmanager_Field {
 			if ( is_numeric( $value ) && $value > 0 ) {
 
 				$attachment = get_post( $value );
-				$out = '<div class="gallery-item" data-id="' . esc_attr( $value ) . '">';
+				$out = '<div class="gallery-item" data-fieldmanager-item-id="' . esc_attr( $value ) . '">';
 
 				if ( strpos( $attachment->post_mime_type, 'image/' ) === 0 ) {
 
@@ -175,8 +191,9 @@ class Fieldmanager_Gallery extends Fieldmanager_Field {
 		$input_value = implode( ',', $values );
 
 		return sprintf(
-			'<input type="button" class="fm-gallery-button button-secondary fm-incrementable" id="%1$s" value="%3$s" data-choose="%7$s" data-update="%8$s" data-collection="%9$s" />
-			<input type="hidden" name="%2$s" value="%4$s" class="fm-element fm-gallery-id" />
+			'<input type="button" class="fm-gallery-button button-secondary fm-incrementable" id="%1$s" value="%3$s" data-choose="%7$s" data-update="%8$s" data-collection="%9$s" />' .
+			( $this->collection ? ' <input type="button" class="fm-gallery-empty button-secondary fm-incrementable' . ( empty( $input_value ) ? ' button-disabled' : '' ) . '" value="%10$s" />' : '' ) .
+			'<input type="hidden" name="%2$s" value="%4$s" class="fm-element fm-gallery-id" />
 			<div class="gallery-wrapper">%5$s</div>
 			<script type="text/javascript">
 			var fm_preview_size = fm_preview_size || [];
@@ -190,7 +207,8 @@ class Fieldmanager_Gallery extends Fieldmanager_Field {
 			json_encode( $this->preview_size ),
 			esc_attr( $this->modal_title ),
 			esc_attr( $this->modal_button_label ),
-			intval( $this->collection )
+			intval( $this->collection ),
+			esc_attr( $this->empty_gallery_label )
 		);
 	}
 
